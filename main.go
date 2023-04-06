@@ -20,6 +20,7 @@ import (
 	"flag"
 	"os"
 
+	ipamv1alpha2 "github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2"
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -48,6 +49,7 @@ func init() {
 	utilruntime.Must(ipamv1.AddToScheme(scheme))
 
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(ipamv1alpha2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

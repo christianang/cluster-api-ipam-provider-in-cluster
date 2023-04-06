@@ -1,0 +1,12 @@
+apiVersion: ipam.cluster.x-k8s.io/v1alpha2
+kind: InClusterIPPool
+metadata:
+  labels:
+    app.kubernetes.io/name: inclusterippool
+    app.kubernetes.io/instance: inclusterippool-sample
+    app.kubernetes.io/part-of: cluster-api-ipam-provider-in-cluster
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: cluster-api-ipam-provider-in-cluster
+  name: inclusterippool-sample
+spec:
+  # TODO(user): Add fields here

@@ -12,4 +12,20 @@ resources:
   kind: InClusterIPPool
   path: github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: cluster.x-k8s.io
+  group: ipam
+  kind: InClusterIPPool
+  path: github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2
+  version: v1alpha2
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: cluster.x-k8s.io
+  group: ipam
+  kind: GlobalInClusterIPPool
+  path: github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2
+  version: v1alpha2
 version: "3"
