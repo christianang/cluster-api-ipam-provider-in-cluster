@@ -13,14 +13,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha1"
+	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2"
 	"github.com/telekom/cluster-api-ipam-provider-in-cluster/internal/poolutil"
 	"github.com/telekom/cluster-api-ipam-provider-in-cluster/pkg/types"
 )
 
 func (webhook *InClusterIPPool) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	err := ctrl.NewWebhookManagedBy(mgr).
-		For(&v1alpha1.InClusterIPPool{}).
+		For(&v1alpha2.InClusterIPPool{}).
 		WithDefaulter(webhook).
 		WithValidator(webhook).
 		Complete()
@@ -28,17 +28,17 @@ func (webhook *InClusterIPPool) SetupWebhookWithManager(mgr ctrl.Manager) error 
 		return err
 	}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(&v1alpha1.GlobalInClusterIPPool{}).
+		For(&v1alpha2.GlobalInClusterIPPool{}).
 		WithDefaulter(webhook).
 		WithValidator(webhook).
 		Complete()
 }
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-ipam-cluster-x-k8s-io-v1alpha1-inclusterippool,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=inclusterippools,versions=v1alpha1,name=validation.inclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
-// +kubebuilder:webhook:verbs=create;update,path=/mutate-ipam-cluster-x-k8s-io-v1alpha1-inclusterippool,mutating=true,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=inclusterippools,versions=v1alpha1,name=default.inclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-ipam-cluster-x-k8s-io-v1alpha2-inclusterippool,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=inclusterippools,versions=v1alpha2,name=validation.inclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/mutate-ipam-cluster-x-k8s-io-v1alpha2-inclusterippool,mutating=true,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=inclusterippools,versions=v1alpha2,name=default.inclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-ipam-cluster-x-k8s-io-v1alpha1-globalinclusterippool,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=globalinclusterippools,versions=v1alpha1,name=validation.globalinclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
-// +kubebuilder:webhook:verbs=create;update,path=/mutate-ipam-cluster-x-k8s-io-v1alpha1-globalinclusterippool,mutating=true,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=globalinclusterippools,versions=v1alpha1,name=default.globalinclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/validate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool,mutating=false,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=globalinclusterippools,versions=v1alpha2,name=validation.globalinclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:verbs=create;update,path=/mutate-ipam-cluster-x-k8s-io-v1alpha2-globalinclusterippool,mutating=true,failurePolicy=fail,matchPolicy=Equivalent,groups=ipam.cluster.x-k8s.io,resources=globalinclusterippools,versions=v1alpha2,name=default.globalinclusterippool.ipam.cluster.x-k8s.io,sideEffects=None,admissionReviewVersions=v1;v1beta1
 
 // InClusterIPPool implements a validating and defaulting webhook for InClusterIPPool and GlobalInClusterIPPool.
 type InClusterIPPool struct {
@@ -50,51 +50,6 @@ var _ webhook.CustomValidator = &InClusterIPPool{}
 
 // Default satisfies the defaulting webhook interface.
 func (webhook *InClusterIPPool) Default(_ context.Context, obj runtime.Object) error {
-	pool, ok := obj.(types.GenericInClusterPool)
-	if !ok {
-		return apierrors.NewBadRequest(fmt.Sprintf("expected a InClusterIPPool or an GlobalInClusterIPPool but got a %T", obj))
-	}
-	poolSpec := pool.PoolSpec()
-	if len(poolSpec.Addresses) > 0 {
-		return nil
-	}
-
-	if poolSpec.Subnet == "" {
-		first, err := netip.ParseAddr(poolSpec.First)
-		if err != nil {
-			return apierrors.NewInvalid(v1alpha1.GroupVersion.WithKind(pool.GetObjectKind().GroupVersionKind().Kind).GroupKind(), pool.GetName(), field.ErrorList{
-				field.Invalid(field.NewPath("spec", "subnet"), poolSpec.Subnet, err.Error()),
-			})
-		}
-
-		prefix, err := first.Prefix(poolSpec.Prefix)
-		if err != nil {
-			return apierrors.NewInvalid(v1alpha1.GroupVersion.WithKind(pool.GetObjectKind().GroupVersionKind().Kind).GroupKind(), pool.GetName(), field.ErrorList{
-				field.Invalid(field.NewPath("spec", "prefix"), poolSpec.Prefix, err.Error()),
-			})
-		}
-
-		poolSpec.Subnet = prefix.String()
-	} else {
-		prefix, err := netip.ParsePrefix(poolSpec.Subnet)
-		if err != nil {
-			return apierrors.NewInvalid(v1alpha1.GroupVersion.WithKind(pool.GetObjectKind().GroupVersionKind().Kind).GroupKind(), pool.GetName(), field.ErrorList{
-				field.Invalid(field.NewPath("spec", "subnet"), poolSpec.Subnet, err.Error()),
-			})
-		}
-
-		prefixRange := netipx.RangeOfPrefix(prefix)
-		if poolSpec.First == "" {
-			poolSpec.First = prefixRange.From().Next().String() // omits the first address, the assumed gateway
-		}
-		if poolSpec.Last == "" {
-			poolSpec.Last = prefixRange.To().Prev().String() // omits the last address, the assumed broadcast
-		}
-		if poolSpec.Prefix == 0 {
-			poolSpec.Prefix = prefix.Bits()
-		}
-	}
-
 	return nil
 }
 
@@ -129,66 +84,16 @@ func (webhook *InClusterIPPool) validate(_, newPool types.GenericInClusterPool) 
 	var allErrs field.ErrorList
 	defer func() {
 		if len(allErrs) > 0 {
-			reterr = apierrors.NewInvalid(v1alpha1.GroupVersion.WithKind(newPool.GetObjectKind().GroupVersionKind().Kind).GroupKind(), newPool.GetName(), allErrs)
+			reterr = apierrors.NewInvalid(v1alpha2.GroupVersion.WithKind(newPool.GetObjectKind().GroupVersionKind().Kind).GroupKind(), newPool.GetName(), allErrs)
 		}
 	}()
 
-	if len(newPool.PoolSpec().Addresses) > 0 {
-		allErrs = append(allErrs, validateAddresses(newPool)...)
-		return
-	}
-
-	prefix, err := netip.ParsePrefix(newPool.PoolSpec().Subnet)
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "subnet"), newPool.PoolSpec().Subnet, err.Error()))
-		return
-	}
-
-	first, err := netip.ParseAddr(newPool.PoolSpec().First)
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "first"), newPool.PoolSpec().First, err.Error()))
-	} else if !prefix.Contains(first) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "first"), newPool.PoolSpec().First, "address is not part of spec.subnet"))
-	}
-
-	last, err := netip.ParseAddr(newPool.PoolSpec().Last)
-	if err != nil {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "last"), newPool.PoolSpec().Last, err.Error()))
-	} else if !prefix.Contains(last) {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "last"), newPool.PoolSpec().Last, "address is not part of spec.subnet"))
-	}
-
-	if prefix.Bits() != newPool.PoolSpec().Prefix {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "prefix"), newPool.PoolSpec().Prefix, "does not match prefix of spec.subnet"))
-	}
-
-	if newPool.PoolSpec().Gateway != "" {
-		_, err := netip.ParseAddr(newPool.PoolSpec().Gateway)
-		if err != nil {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "gateway"), newPool.PoolSpec().Gateway, err.Error()))
-		}
-	}
-
-	return //nolint:nakedret
-}
-
-func validateAddresses(newPool types.GenericInClusterPool) field.ErrorList {
-	var allErrs field.ErrorList
-
-	if newPool.PoolSpec().Subnet != "" {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "subnet"), newPool.PoolSpec().Subnet, "subnet may not be used with addresses"))
-	}
-
-	if newPool.PoolSpec().First != "" {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "start"), newPool.PoolSpec().First, "start may not be used with addresses"))
-	}
-
-	if newPool.PoolSpec().Last != "" {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "end"), newPool.PoolSpec().Last, "end may not be used with addresses"))
+	if len(newPool.PoolSpec().Addresses) == 0 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "addresses"), newPool.PoolSpec().Addresses, "addresses is required"))
 	}
 
 	if newPool.PoolSpec().Prefix == 0 {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "prefix"), newPool.PoolSpec().Prefix, "a valid prefix is required when using addresses"))
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec", "prefix"), newPool.PoolSpec().Prefix, "a valid prefix is required"))
 	}
 
 	if newPool.PoolSpec().Gateway != "" {
@@ -212,10 +117,10 @@ func validateAddresses(newPool types.GenericInClusterPool) field.ErrorList {
 		}
 	}
 
-	return allErrs
+	return //nolint:nakedret
 }
 
-func validatePrefix(spec *v1alpha1.InClusterIPPoolSpec) (*netipx.IPSet, field.ErrorList) {
+func validatePrefix(spec *v1alpha2.InClusterIPPoolSpec) (*netipx.IPSet, field.ErrorList) {
 	var errors field.ErrorList
 
 	addressesIPSet, err := poolutil.AddressesToIPSet(spec.Addresses)
@@ -245,12 +150,8 @@ func validatePrefix(spec *v1alpha1.InClusterIPPoolSpec) (*netipx.IPSet, field.Er
 	return prefixIPSet, errors
 }
 
-func validateAddressesAreWithinPrefix(spec *v1alpha1.InClusterIPPoolSpec) field.ErrorList {
+func validateAddressesAreWithinPrefix(spec *v1alpha2.InClusterIPPoolSpec) field.ErrorList {
 	var errors field.ErrorList
-
-	if len(spec.Addresses) == 0 {
-		return errors
-	}
 
 	prefixIPSet, prefixErrs := validatePrefix(spec)
 	if len(prefixErrs) > 0 {

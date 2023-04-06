@@ -13,7 +13,7 @@ import (
 	ipamv1 "sigs.k8s.io/cluster-api/exp/ipam/api/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha1"
+	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2"
 	"github.com/telekom/cluster-api-ipam-provider-in-cluster/internal/index"
 )
 
@@ -109,26 +109,8 @@ func AddressToIPSet(addressStr string) (*netipx.IPSet, error) {
 }
 
 // IPPoolSpecToIPSet converts poolSpec to a set of IP.
-func IPPoolSpecToIPSet(poolSpec *v1alpha1.InClusterIPPoolSpec) (*netipx.IPSet, error) {
-	if len(poolSpec.Addresses) > 0 {
-		return AddressesToIPSet(poolSpec.Addresses)
-	}
-
-	builder := &netipx.IPSetBuilder{}
-
-	start, err := netip.ParseAddr(poolSpec.First)
-	if err != nil {
-		return nil, err
-	}
-
-	end, err := netip.ParseAddr(poolSpec.Last)
-	if err != nil {
-		return nil, err
-	}
-
-	builder.AddRange(netipx.IPRangeFrom(start, end))
-
-	return builder.IPSet()
+func IPPoolSpecToIPSet(poolSpec *v1alpha2.InClusterIPPoolSpec) (*netipx.IPSet, error) {
+	return AddressesToIPSet(poolSpec.Addresses)
 }
 
 // AddressStrParses checks to see that the addresss string is one of

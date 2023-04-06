@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"go4.org/netipx"
 
-	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha1"
+	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2"
 )
 
 var _ = Describe("AddressListToSet", func() {
@@ -257,22 +257,8 @@ var _ = Describe("AddressStrParses", func() {
 
 var _ = Describe("IPPoolSpecToIPSet", func() {
 	Context("when the poolSpec has a list of addresses", func() {
-		It("parses pools with start/end", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{
-				First: "192.168.1.2",
-				Last:  "192.168.1.4",
-			}
-
-			ipSet, err := IPPoolSpecToIPSet(poolSpec)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(ipSet.Contains(mustParse("192.168.1.2"))).To(BeTrue())
-			Expect(ipSet.Contains(mustParse("192.168.1.3"))).To(BeTrue())
-			Expect(ipSet.Contains(mustParse("192.168.1.4"))).To(BeTrue())
-			Expect(ipSet.Contains(mustParse("192.168.1.5"))).To(BeFalse())
-		})
-
 		It("parses single IPs", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{
+			poolSpec := &v1alpha2.InClusterIPPoolSpec{
 				Addresses: []string{
 					"192.168.1.2",
 					"192.168.1.3",
@@ -287,7 +273,7 @@ var _ = Describe("IPPoolSpecToIPSet", func() {
 		})
 
 		It("parses IP ranges with a dash", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{
+			poolSpec := &v1alpha2.InClusterIPPoolSpec{
 				Addresses: []string{
 					"192.168.1.2-192.168.1.4",
 					"192.168.1.7-192.168.1.9",
@@ -308,7 +294,7 @@ var _ = Describe("IPPoolSpecToIPSet", func() {
 		})
 
 		It("parses IP CIDRs", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{
+			poolSpec := &v1alpha2.InClusterIPPoolSpec{
 				Addresses: []string{
 					"192.168.1.8/29",
 					"192.168.1.100/30",
@@ -337,7 +323,7 @@ var _ = Describe("IPPoolSpecToIPSet", func() {
 		})
 
 		It("handles combinations of ranges, cidrs, and individual IPs", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{
+			poolSpec := &v1alpha2.InClusterIPPoolSpec{
 				Addresses: []string{
 					"192.168.1.100/31",
 					"192.168.1.2-192.168.1.4",
@@ -362,7 +348,7 @@ var _ = Describe("IPPoolSpecToIPSet", func() {
 		})
 
 		It("handles combinations of IPv6 ranges, cidrs, and individual IPs", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{
+			poolSpec := &v1alpha2.InClusterIPPoolSpec{
 				Addresses: []string{
 					"fe80::10/127",
 					"fe80::13-fe80::14",
@@ -386,22 +372,22 @@ var _ = Describe("IPPoolSpecToIPSet", func() {
 		})
 
 		It("returns and error when spec is invalid", func() {
-			poolSpec := &v1alpha1.InClusterIPPoolSpec{Addresses: []string{"192.168.1.2-192.168.1.4-"}}
+			poolSpec := &v1alpha2.InClusterIPPoolSpec{Addresses: []string{"192.168.1.2-192.168.1.4-"}}
 			_, err := IPPoolSpecToIPSet(poolSpec)
 			Expect(err).To(HaveOccurred())
-			poolSpec = &v1alpha1.InClusterIPPoolSpec{Addresses: []string{"192.168.1.2-192.168.1.4-192.168.1.9"}}
+			poolSpec = &v1alpha2.InClusterIPPoolSpec{Addresses: []string{"192.168.1.2-192.168.1.4-192.168.1.9"}}
 			_, err = IPPoolSpecToIPSet(poolSpec)
 			Expect(err).To(HaveOccurred())
-			poolSpec = &v1alpha1.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4-192.168.1.2"}}
+			poolSpec = &v1alpha2.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4-192.168.1.2"}}
 			_, err = IPPoolSpecToIPSet(poolSpec)
 			Expect(err).To(HaveOccurred())
-			poolSpec = &v1alpha1.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4/21-192.168.1.2"}}
+			poolSpec = &v1alpha2.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4/21-192.168.1.2"}}
 			_, err = IPPoolSpecToIPSet(poolSpec)
 			Expect(err).To(HaveOccurred())
-			poolSpec = &v1alpha1.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4/-192.168.1.2"}}
+			poolSpec = &v1alpha2.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4/-192.168.1.2"}}
 			_, err = IPPoolSpecToIPSet(poolSpec)
 			Expect(err).To(HaveOccurred())
-			poolSpec = &v1alpha1.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4-192.168.1.2"}}
+			poolSpec = &v1alpha2.InClusterIPPoolSpec{Addresses: []string{"192.168.1.4-192.168.1.2"}}
 			_, err = IPPoolSpecToIPSet(poolSpec)
 			Expect(err).To(HaveOccurred())
 		})

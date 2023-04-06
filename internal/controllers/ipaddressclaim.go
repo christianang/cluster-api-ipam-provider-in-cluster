@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha1"
+	"github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2"
 	"github.com/telekom/cluster-api-ipam-provider-in-cluster/internal/poolutil"
 	"github.com/telekom/cluster-api-ipam-provider-in-cluster/pkg/ipamutil"
 	ipampredicates "github.com/telekom/cluster-api-ipam-provider-in-cluster/pkg/predicates"
@@ -50,11 +50,11 @@ func (r *IPAddressClaimReconciler) SetupWithManager(ctx context.Context, mgr ctr
 		For(&ipamv1.IPAddressClaim{}, builder.WithPredicates(
 			predicate.Or(
 				ipampredicates.ClaimReferencesPoolKind(metav1.GroupKind{
-					Group: v1alpha1.GroupVersion.Group,
+					Group: v1alpha2.GroupVersion.Group,
 					Kind:  "InClusterIPPool",
 				}),
 				ipampredicates.ClaimReferencesPoolKind(metav1.GroupKind{
-					Group: v1alpha1.GroupVersion.Group,
+					Group: v1alpha2.GroupVersion.Group,
 					Kind:  "GlobalInClusterIPPool",
 				}),
 			),
@@ -65,7 +65,7 @@ func (r *IPAddressClaimReconciler) SetupWithManager(ctx context.Context, mgr ctr
 		}).
 		Owns(&ipamv1.IPAddress{}, builder.WithPredicates(
 			ipampredicates.AddressReferencesPoolKind(metav1.GroupKind{
-				Group: v1alpha1.GroupVersion.Group,
+				Group: v1alpha2.GroupVersion.Group,
 				Kind:  "InClusterIPPool",
 			}),
 		)).
@@ -113,13 +113,13 @@ func (r *IPAddressClaimReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var pool pooltypes.GenericInClusterPool
 
 	if claim.Spec.PoolRef.Kind == "InClusterIPPool" {
-		icippool := &v1alpha1.InClusterIPPool{}
+		icippool := &v1alpha2.InClusterIPPool{}
 		if err := r.Client.Get(ctx, types.NamespacedName{Namespace: claim.Namespace, Name: claim.Spec.PoolRef.Name}, icippool); err != nil && !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, errors.Wrap(err, "failed to fetch pool")
 		}
 		pool = icippool
 	} else if claim.Spec.PoolRef.Kind == "GlobalInClusterIPPool" {
-		gicippool := &v1alpha1.GlobalInClusterIPPool{}
+		gicippool := &v1alpha2.GlobalInClusterIPPool{}
 		if err := r.Client.Get(ctx, types.NamespacedName{Name: claim.Spec.PoolRef.Name}, gicippool); err != nil && !apierrors.IsNotFound(err) {
 			return ctrl.Result{}, errors.Wrap(err, "failed to fetch pool")
 		}

@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	//+kubebuilder:scaffold:imports
-	v1alpha1 "github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha1"
+	v1alpha2 "github.com/telekom/cluster-api-ipam-provider-in-cluster/api/v1alpha2"
 	"github.com/telekom/cluster-api-ipam-provider-in-cluster/internal/index"
 )
 
@@ -61,7 +61,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	Expect(v1alpha1.AddToScheme(scheme.Scheme)).To(Succeed())
+	Expect(v1alpha2.AddToScheme(scheme.Scheme)).To(Succeed())
 	Expect(clusterv1.AddToScheme(scheme.Scheme)).To(Succeed())
 	Expect(ipamv1.AddToScheme(scheme.Scheme)).To(Succeed())
 
